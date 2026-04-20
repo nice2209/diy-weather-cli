@@ -80,10 +80,8 @@ def resolve_location(query: str, cli_location: str | None, default_location: str
     for token in candidates:
         if token and token not in LOCATION_BLOCKLIST:
             return token
-    if candidates:
-        log.info("질문에서 시점 표현만 찾았어요. 기본값 '%s'을(를) 사용합니다.", default_location)
-    else:
-        log.info("지역을 찾지 못해 기본값 '%s'을(를) 사용합니다.", default_location)
+    reason = "질문에서 시점 표현만 찾았어요." if candidates else "지역을 찾지 못했어요."
+    print(f"{reason} 기본값 '{default_location}'을(를) 사용합니다.", file=sys.stderr)
     return default_location
 
 
@@ -115,14 +113,12 @@ def fetch_weather(location: str) -> dict[str, Any]:
 
 def _lang_ko(entry: dict[str, Any]) -> str:
     """current_condition / hourly 항목에서 한국어 설명을 뽑는다."""
-    lang_ko = entry.get("lang_ko") or []
-    if lang_ko and isinstance(lang_ko, list):
-        value = lang_ko[0].get("value", "")
-        if value:
-            return value
-    desc = entry.get("weatherDesc") or []
-    if desc and isinstance(desc, list):
-        return desc[0].get("value", "")
+    for key in ("lang_ko", "weatherDesc"):
+        items = entry.get(key) or []
+        if items:
+            value = items[0].get("value", "")
+            if value:
+                return value
     return ""
 
 
