@@ -1,0 +1,17 @@
+.env
+.env.local
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db
+*.sqlite
+node_modules/
+.DS_Store
+
+# OMC runtime state (keep specs/ and plans/ as development docs)
+.omc/state/
+.omc/sessions/
+.omc/logs/
+.omc/notepad.md
+.omc/project-memory.json
