@@ -65,10 +65,23 @@ python main.py "내일 기온" --location 부산
 | 5 | wttr.in 비정상 응답 (200 외 상태코드, JSON 파싱 실패 등) |
 | 6 | Ollama Cloud 호출 실패 |
 
-## 테스트
-이 MVP는 `pytest` 없이 수동 테스트만 합니다. 계획서의 T1~T8 시나리오를 직접
-실행해 확인하세요. 자동화 테스트는 Post-MVP로 미뤘습니다.
+## 수락 테스트
+`pytest` 없이 아래 명령을 직접 실행해 검증합니다. 자동화 테스트는 Post-MVP.
+
+| # | 명령 | 기대 결과 |
+|---|------|-----------|
+| T1 | `python main.py "서울 오늘 날씨"` | 1~3문장 한국어 요약, 현재 기온·체감·습도·바람 + 단기 예보 포함, exit 0 |
+| T3 | `python main.py "내일 기온" --location 부산` | "부산" 기반 답변, stderr에 기본값 안내 없음 |
+| T4 | Wi-Fi 끄고 T1 재실행 | stderr에 "인터넷 연결을 확인해주세요.", stdout 비어 있음, exit 3 |
+| T5 | `OLLAMA_API_KEY` 미설정 + T1 | stderr에 한국어 설정 안내, exit 2 |
+| T6 | `python main.py "ㄱㄴㄷ 날씨"` | 지역 추출 실패 → `DEFAULT_LOCATION` 폴백 + stderr 안내, exit 0 또는 5 |
+| T7 | `grep 'OLLAMA_API_KEY=' main.py` | 하드코딩된 키 없음 (환경변수 읽기만) |
+
+종료 코드는 파이프/스크립트에서 분기 가능: `python main.py "..." && notify-send OK`.
 
 ## 보안
 - API 키는 환경변수로만 읽으며 로그·에러·stdout 어디에도 노출하지 않습니다.
 - Ollama Cloud 호출이 실패해도 상태 코드만 알려주고 키는 표시하지 않습니다.
+
+## License
+MIT License. 자세한 내용은 [LICENSE](./LICENSE) 참조.

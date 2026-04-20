@@ -15,3 +15,6 @@ node_modules/
 .omc/logs/
 .omc/notepad.md
 .omc/project-memory.json
+.omc/prd.json
+.omc/progress.txt
+.omc/artifacts/

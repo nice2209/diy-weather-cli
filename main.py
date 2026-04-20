@@ -206,24 +206,43 @@ def _force_utf8_stdio() -> None:
             pass
 
 
+def _parse_env_value(raw: str) -> str:
+    """.env 한 줄의 `=` 뒤 부분을 값으로 변환.
+
+    - 값이 "..." 또는 '...'로 감싸졌으면 내부만 사용(그 뒤 꼬리는 버림).
+    - 따옴표 없으면 `\\s#` 패턴(공백 다음 #)부터 뒤를 인라인 주석으로 제거.
+      `abc#def`처럼 공백 없이 붙은 #은 값의 일부로 보존(hex color 등 실용 케이스).
+    """
+    v = raw.strip()
+    if v[:1] in ('"', "'"):
+        quote = v[0]
+        end = v.find(quote, 1)
+        return v[1:end] if end != -1 else v[1:]
+    for i in range(1, len(v)):
+        if v[i] == "#" and v[i - 1].isspace():
+            return v[:i].rstrip()
+    return v
+
+
 def _load_dotenv(path: str = ".env") -> None:
     """표준 라이브러리만으로 .env를 읽어 이미 설정되지 않은 키만 os.environ에 주입.
 
     - 이미 OS 환경변수에 값이 있으면 덮어쓰지 않는다 (실행 시 `set`이 우선).
     - 주석(#)과 빈 줄 무시. `KEY=VALUE` 형태만 지원.
-    - 값 주변의 큰/작은 따옴표는 벗겨낸다.
+    - 인용된 값은 따옴표 벗기고, 값 뒤 인라인 주석(공백#이후)은 제거.
+    - `encoding="utf-8-sig"`로 Windows 메모장이 붙이는 UTF-8 BOM을 투명하게 제거.
     """
     if not os.path.isfile(path):
         return
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             for raw in f:
                 line = raw.strip()
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 key, _, value = line.partition("=")
                 key = key.strip()
-                value = value.strip().strip('"').strip("'")
+                value = _parse_env_value(value)
                 if key and key not in os.environ:
                     os.environ[key] = value
     except OSError as exc:
